@@ -7,3 +7,6 @@
 [submodule "ODESolver"]
 	path = ODESolver
 	url = https://github.com/gagandeepthapar/ODESolver
+[submodule "Controller"]
+	path = Controller
+	url = https://github.com/gagandeepthapar/Controller.git
