@@ -1,0 +1,9 @@
+[submodule "Sensor"]
+	path = Sensor
+	url = https://github.com/gagandeepthapar/Sensor.git
+[submodule "StateEstimator"]
+	path = StateEstimator
+	url = https://github.com/gagandeepthapar/StateEstimator.git
+[submodule "ODESolver"]
+	path = ODESolver
+	url = https://github.com/gagandeepthapar/ODESolver
