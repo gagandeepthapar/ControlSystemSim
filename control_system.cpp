@@ -1,7 +1,10 @@
 #include "control_system.hpp"
 #include "constants.hpp"
+#include "matplot/matplot.h"
 #include <__chrono/duration.h>
 #include <chrono>
+
+namespace plt = matplot;
 
 ControlSystem::ControlSystem(Plant *system_plant,
                              std::vector<Sensor *> sensor_suite,
@@ -125,5 +128,47 @@ void ControlSystem::simulate(double time, Eigen::VectorXd true_state,
     this->print_log(time);
   }
 
+  return;
+}
+
+void ControlSystem::plot_data() {
+  std::vector<int> all_state(this->num_states);
+  std::iota(all_state.begin(), all_state.end(), 0);
+  return this->plot_data(all_state);
+}
+
+void ControlSystem::plot_data(std::vector<int> state_num) {
+
+  // plot
+  plt::tiledlayout(state_num.size(), 2);
+  for (int idx : state_num) {
+    // time hist
+    auto next = plt::nexttile();
+    plt::hold(true);
+    plt::plot(this->time_bus, (Eigen::VectorXd)this->truth_bus.row(idx));
+    plt::plot(this->time_bus, (Eigen::VectorXd)this->measurement_bus.row(idx),
+              "r--");
+    plt::plot(this->time_bus, (Eigen::VectorXd)this->estimation_bus.row(idx),
+              "g");
+    plt::hold(false);
+    plt::legend({"True", "Measured", "Estimated"});
+    plt::title("State " + std::to_string(idx));
+
+    // error
+    next = plt::nexttile();
+    plt::hold(true);
+    plt::plot(this->time_bus,
+              (Eigen::VectorXd)(this->truth_bus.row(idx) -
+                                this->measurement_bus.row(idx)),
+              "r--");
+    plt::plot(this->time_bus,
+              (Eigen::VectorXd)(this->truth_bus.row(idx) -
+                                this->estimation_bus.row(idx)),
+              "g");
+    plt::hold(false);
+    plt::legend({"Measured", "Estimated"});
+    plt::title("State " + std::to_string(idx) + " Error");
+  }
+  plt::show();
   return;
 }

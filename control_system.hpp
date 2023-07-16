@@ -18,7 +18,8 @@ public:
   void simulate(double time, Eigen::VectorXd state, double t_step,
                 bool known_state, bool verbose);
 
-  void init_sensors(std::vector<Sensor> sensors);
+  void plot_data();
+  void plot_data(std::vector<int>);
 
 private:
   void init_system();
