@@ -2,11 +2,8 @@
 #include "StateEstimator/state_estimator.hpp"
 #include "constants.hpp"
 #include "control_system.hpp"
-#include "matplot/matplot.h"
 #include "plant.hpp"
 #include <cmath>
-
-namespace plt = matplot;
 
 int main() {
 
@@ -43,20 +40,19 @@ int main() {
   F.setIdentity(n, n);
   F = A * DT + F;
 
-  G.setZero(n, 1);
+  G = (Eigen::Vector2d() << 1, 0).finished();
 
   Q.resize(n, n);
-  Q(0, 0) = 0.01;
-  Q(1, 1) = 0.01;
+  Q(0, 0) = 0.0001;
+  Q(1, 1) = 0.0001;
 
   H.setIdentity(n, n);
 
   R.resize(n, n);
   R(0, 0) = 0.01;
-  R(1, 1) = 0.01;
+  R(1, 1) = 0.04;
 
   KalmanFilter kf(F, G, Q, H, R);
-  std::cout << "KF INIT" << std::endl;
 
   // form Control System
   Plant *plant_ptr = &msd_plant;
@@ -67,7 +63,7 @@ int main() {
 
   // simulate
   double tF = 100.0;
-  (void)msd.simulate(tF, state, DT, true, true);
-  (void)msd.plot_data();
+  msd.simulate(tF, state, DT, true, true);
+  msd.plot_data();
   return 0;
 }
