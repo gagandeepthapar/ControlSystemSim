@@ -3,7 +3,10 @@
 #include "constants.hpp"
 #include "control_system.hpp"
 #include "plant.hpp"
-#include <cmath>
+
+#include "matplot/matplot.h"
+
+namespace plt = matplot;
 
 int main() {
 
@@ -63,7 +66,8 @@ int main() {
 
   // simulate
   double tF = 100.0;
-  msd.simulate(tF, state, DT, true, true);
+  msd.simulate(tF, state, DT, false, true);
   msd.plot_data();
+
   return 0;
 }
