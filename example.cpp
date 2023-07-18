@@ -12,7 +12,7 @@ int main() {
 
   // mass spring dampener system
   int n = 2;
-  double c_damp = 0.4;
+  double c_damp = 0.2;
   double k_spring = 1.0;
   double mass = 1.5;
 
@@ -34,7 +34,7 @@ int main() {
   // sensors.push_back(new WhiteSensor(0, 0.1));
   // sensors.push_back(new WhiteSensor(0, 0.2));
   sensors.push_back(new PinkSensor(10, 0.1, 0.1));
-  sensors.push_back(new PinkSensor(10, 0.01, 0.01));
+  sensors.push_back(new PinkSensor(10, 0.1, 0.1));
 
   // init estimator
   NULLEstimator no_estimator;
@@ -70,6 +70,7 @@ int main() {
   double tF = 100.0;
   msd.simulate(tF, state, DT, false, true);
   msd.plot_data();
+  plt::save("MSD.png");
 
   return 0;
 }

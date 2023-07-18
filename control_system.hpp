@@ -19,7 +19,10 @@ public:
                 bool known_state, bool verbose);
 
   void plot_data();
-  void plot_data(std::vector<int>);
+  void plot_data(bool error);
+
+  void plot_data(std::vector<int> state_num);
+  void plot_data(std::vector<int> state_num, bool error);
 
 private:
   void init_system();

@@ -134,13 +134,23 @@ void ControlSystem::simulate(double time, Eigen::VectorXd true_state,
 void ControlSystem::plot_data() {
   std::vector<int> all_state(this->num_states);
   std::iota(all_state.begin(), all_state.end(), 0);
-  return this->plot_data(all_state);
+  return this->plot_data(all_state, false);
+}
+
+void ControlSystem::plot_data(bool error) {
+  std::vector<int> all_state(this->num_states);
+  std::iota(all_state.begin(), all_state.end(), 0);
+  return this->plot_data(all_state, error);
 }
 
 void ControlSystem::plot_data(std::vector<int> state_num) {
+  return this->plot_data(state_num, false);
+}
+
+void ControlSystem::plot_data(std::vector<int> state_num, bool error) {
 
   // plot
-  plt::tiledlayout(state_num.size(), 2);
+  plt::tiledlayout(state_num.size(), (int)error + 1);
   for (int idx : state_num) {
     // time hist
     auto next = plt::nexttile();
@@ -154,20 +164,22 @@ void ControlSystem::plot_data(std::vector<int> state_num) {
     plt::legend({"True", "Measured", "Estimated"});
     plt::title("State " + std::to_string(idx));
 
-    // error
-    next = plt::nexttile();
-    plt::hold(true);
-    plt::plot(this->time_bus,
-              (Eigen::VectorXd)(this->truth_bus.row(idx) -
-                                this->measurement_bus.row(idx)),
-              "r--");
-    plt::plot(this->time_bus,
-              (Eigen::VectorXd)(this->truth_bus.row(idx) -
-                                this->estimation_bus.row(idx)),
-              "g");
-    plt::hold(false);
-    plt::legend({"Measured", "Estimated"});
-    plt::title("State " + std::to_string(idx) + " Error");
+    if (error) {
+      // error
+      next = plt::nexttile();
+      plt::hold(true);
+      plt::plot(this->time_bus,
+                (Eigen::VectorXd)(this->truth_bus.row(idx) -
+                                  this->measurement_bus.row(idx)),
+                "r--");
+      plt::plot(this->time_bus,
+                (Eigen::VectorXd)(this->truth_bus.row(idx) -
+                                  this->estimation_bus.row(idx)),
+                "g");
+      plt::hold(false);
+      plt::legend({"Measured", "Estimated"});
+      plt::title("State " + std::to_string(idx) + " Error");
+    }
   }
   plt::show();
   return;
