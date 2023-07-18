@@ -31,8 +31,10 @@ int main() {
 
   // setup sensors
   std::vector<Sensor *> sensors;
-  sensors.push_back(new WhiteSensor(0, 0.1));
-  sensors.push_back(new WhiteSensor(0, 0.2));
+  // sensors.push_back(new WhiteSensor(0, 0.1));
+  // sensors.push_back(new WhiteSensor(0, 0.2));
+  sensors.push_back(new PinkSensor(10, 0.1, 0.1));
+  sensors.push_back(new PinkSensor(10, 0.01, 0.01));
 
   // init estimator
   NULLEstimator no_estimator;
