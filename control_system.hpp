@@ -5,7 +5,8 @@
 #include "ODESolver/ode_solver.hpp"
 #include "Sensor/sensor.hpp"
 #include "StateEstimator/state_estimator.hpp"
-#include "constants.hpp"
+#include "TrajectoryGenerator/trajectory_gen.hpp"
+// #include "constants.hpp"
 #include "plant.hpp"
 
 #include "eigen3/Eigen/Core"
@@ -14,7 +15,7 @@
 class ControlSystem {
 public:
   ControlSystem(Plant *system_plant, std::vector<Sensor *> sensor_suite,
-                StateEstimator *state_estimator);
+                StateEstimator *state_estimator, TrajectoryGenerator *ref_traj);
   void simulate(double time, Eigen::VectorXd state, double t_step,
                 bool known_state, bool verbose);
 
@@ -40,20 +41,24 @@ public:
   // Estimator (Singular)
   StateEstimator *estimator;
 
+  // Trajectory (Reference; Singular)
+  TrajectoryGenerator *reference;
+
   // Signal Data
   Eigen::VectorXd time_bus;
   Eigen::MatrixXd truth_bus;
   Eigen::MatrixXd measurement_bus;
   Eigen::MatrixXd estimation_bus;
+  Eigen::MatrixXd reference_bus;
   Eigen::MatrixXd controller_bus;
   Eigen::MatrixXd acutator_bus;
 
 protected:
   // Supportive vars
-  int num_states;
-  int num_inputs;
-  int num_steps;
-  int sol_time;
+  int m_num_states;
+  int m_num_inputs;
+  int m_num_steps;
+  int m_sol_time;
 };
 
 #endif // !CONTROL_SYSTEM_HPP
