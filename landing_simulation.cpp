@@ -4,11 +4,99 @@
 #include "TrajectoryGenerator/traj_constants.hpp"
 #include "TrajectoryGenerator/trajectory_gen.hpp"
 #include "control_system.hpp"
-#include "plant.hpp"
-
 #include "matplot/matplot.h"
+#include "plant.hpp"
+#include <algorithm>
+#include <format>
+#include <string>
 
 namespace plt = matplot;
+const bool ANIMATE = false;
+
+void plot_3d(const Eigen::MatrixXd &exp, const Eigen::MatrixXd &cmd,
+             const Eigen::MatrixXd &ref, const std::string name, bool animate) {
+
+  Eigen::VectorXd x = (Eigen::VectorXd)exp.row(0);
+  Eigen::VectorXd y = (Eigen::VectorXd)exp.row(1);
+  Eigen::VectorXd z = (Eigen::VectorXd)exp.row(2);
+  Eigen::VectorXd vx = (Eigen::VectorXd)exp.row(3);
+  Eigen::VectorXd vy = (Eigen::VectorXd)exp.row(4);
+  Eigen::VectorXd vz = (Eigen::VectorXd)exp.row(5);
+
+  Eigen::VectorXd cmd_x = (Eigen::VectorXd)cmd.row(0);
+  Eigen::VectorXd cmd_y = (Eigen::VectorXd)cmd.row(1);
+  Eigen::VectorXd cmd_z = (Eigen::VectorXd)cmd.row(2);
+  Eigen::VectorXd cmd_vx = (Eigen::VectorXd)cmd.row(3);
+  Eigen::VectorXd cmd_vy = (Eigen::VectorXd)cmd.row(4);
+  Eigen::VectorXd cmd_vz = (Eigen::VectorXd)cmd.row(5);
+
+  Eigen::VectorXd ref_x = (Eigen::VectorXd)ref.row(0);
+  Eigen::VectorXd ref_y = (Eigen::VectorXd)ref.row(1);
+  Eigen::VectorXd ref_z = (Eigen::VectorXd)ref.row(2);
+  Eigen::VectorXd ref_vx = (Eigen::VectorXd)ref.row(3);
+  Eigen::VectorXd ref_vy = (Eigen::VectorXd)ref.row(4);
+  Eigen::VectorXd ref_vz = (Eigen::VectorXd)ref.row(5);
+
+  plt::axes_handle ax;
+  plt::figure_handle fig = plt::figure(true);
+  std::string frame_ct, old_str;
+  int count_len = std::to_string(x.rows()).length() + 1;
+
+  // store axes
+  fig->tiledlayout(2, 1);
+  fig->nexttile();
+  auto ax1 = fig->current_axes();
+  fig->nexttile();
+  auto ax2 = fig->current_axes();
+
+  // ax = fig->current_axes();
+  for (int i = 0; i < z.rows(); i++) {
+    // position
+    ax1->clear();
+    ax1->hold(true);
+    ax1->plot3(z, y, x)->line_width(2);
+    ax1->plot3(cmd_z, cmd_y, cmd_x)->line_width(2);
+    ax1->plot3(ref_z, ref_y, ref_x)->line_width(2);
+    ax1->scatter3({z(i)}, {y(i)}, {x(i)})->marker_face_color({0, 0, 0});
+    ax1->hold(false);
+
+    // apply legend, title, view angle
+    auto l = plt::legend({"Experimental Path", "Commanded Reference",
+                          "Ideal Trajectory", "Lander"});
+    l->location(plt::legend::general_alignment::topleft);
+    ax1->view(69, 13);
+    ax1->title(name + ": Position");
+
+    // velocity
+    ax2->clear();
+    ax2->hold(true);
+    ax2->plot3(vz, vy, vx)->line_width(2);
+    ax2->plot3(cmd_vz, cmd_vy, cmd_vx)->line_width(2);
+    ax2->plot3(ref_vz, ref_vy, ref_vx)->line_width(2);
+    ax2->scatter3({vz(i)}, {vy(i)}, {vx(i)})->marker_face_color({0, 0, 0});
+    ax2->hold(false);
+
+    // save frame
+    l = plt::legend({"Experimental Path", "Commanded Reference",
+                     "Ideal Trajectory", "Lander"});
+    l->location(plt::legend::general_alignment::topleft);
+    ax2->view(69, 13);
+    ax2->title(name + ": Velocity");
+
+    old_str = std::to_string(i);
+    int min = (count_len > old_str.length()) ? old_str.length() : count_len;
+    frame_ct = std::string(count_len - min, '0') + old_str;
+
+    // save frame
+    if (animate) {
+      ax1->parent()->save("testgif/frame" + frame_ct + ".png");
+    }
+  }
+
+  if (!animate) {
+    plt::show();
+  }
+}
 
 int main() {
 
@@ -40,7 +128,7 @@ int main() {
   // setup sensors
   std::vector<Sensor *> sensors;
   for (int i = 0; i < n; i++) {
-    sensors.push_back(new PinkSensor(10, 1, 1));
+    sensors.push_back(new IdealSensor);
   }
 
   // init estimator
@@ -71,8 +159,8 @@ int main() {
   lander_data lander_params;
   trajectory_constraint traj_cons{
       .pos_0 = (Eigen::Vector3d() << 2400, 450, -330).finished(),
-      // .vel_0 = (Eigen::Vector3d() << 0, 0, 0).finished(),
-      .vel_0 = (Eigen::Vector3d() << -40, -10, 10).finished(),
+      .vel_0 = (Eigen::Vector3d() << 40, -10, 10).finished(),
+      // .vel_0 = (Eigen::Vector3d() << -0, 1, -1).finished(),
       .gamma = M_PI / 6};
   env_data world{.PLANET_W = MARS_W, .PLANET_G = MARS_G};
   SplineTrajectory traj_gen(lander_params, traj_cons, world);
@@ -92,49 +180,14 @@ int main() {
 
   // simulate
   double tF = 50.0;
-  lander_sys.simulate(tF, state, DT, false, true);
+  lander_sys.simulate(tF, state, DT, true, true);
 
   Eigen::VectorXd &time = lander_sys.time_bus;
   Eigen::MatrixXd &truth = lander_sys.estimation_bus;
   Eigen::MatrixXd &cmd = lander_sys.reference_bus;
   const Eigen::MatrixXd &ref = traj_gen.state();
 
-  Eigen::VectorXd x = (Eigen::VectorXd)truth.row(0);
-  Eigen::VectorXd y = (Eigen::VectorXd)truth.row(1);
-  Eigen::VectorXd z = (Eigen::VectorXd)truth.row(2);
-
-  Eigen::VectorXd cmd_x = (Eigen::VectorXd)cmd.row(0);
-  Eigen::VectorXd cmd_y = (Eigen::VectorXd)cmd.row(1);
-  Eigen::VectorXd cmd_z = (Eigen::VectorXd)cmd.row(2);
-
-  Eigen::VectorXd ref_x = (Eigen::VectorXd)ref.row(0);
-  Eigen::VectorXd ref_y = (Eigen::VectorXd)ref.row(1);
-  Eigen::VectorXd ref_z = (Eigen::VectorXd)ref.row(2);
-
-  plt::hold(true);
-  plt::plot3(ref_z, ref_y, ref_x, "r--")->line_width(2);
-  plt::plot3(cmd_z, cmd_y, cmd_x, "g--")->line_width(2);
-  plt::plot3(z, y, x)->line_width(2);
-  plt::hold(false);
-  plt::legend({"True Reference", "Commanded Reference", "Experimental"});
-  plt::title(traj_gen.name);
-  plt::show();
-
-  plt::tiledlayout(3, 1);
-
-  for (int i = 0; i < 3; i++) {
-    plt::nexttile();
-    plt::hold(true);
-    plt::plot(time, (Eigen::VectorXd)ref.row(i));
-    plt::plot(time, (Eigen::VectorXd)cmd.row(i));
-    plt::plot(time, (Eigen::VectorXd)truth.row(i));
-    plt::hold(false);
-    plt::legend({"True Reference", "Commanded Reference", "Experimental"});
-  }
-
-  // lander_sys.plot_data();
-  // plt::save("MSD.png");
-  plt::show();
+  plot_3d(truth, cmd, ref, traj_gen.name, ANIMATE);
 
   return 0;
 }

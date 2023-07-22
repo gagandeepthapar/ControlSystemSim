@@ -20,7 +20,6 @@ ControlSystem::ControlSystem(Plant *system_plant,
 void ControlSystem::init_system() {
   m_num_states = plant->num_states;
   m_num_inputs = plant->num_inputs;
-  std::cout << "PLANT STATE " << m_num_states << std::endl;
 }
 
 void ControlSystem::init_sim(double time, double t_step) {
@@ -36,7 +35,6 @@ void ControlSystem::init_sim(double time, double t_step) {
   reference_bus.resize(m_num_states, m_num_steps);
   controller_bus.resize(m_num_states, m_num_steps);
   acutator_bus.resize(m_num_states, m_num_steps);
-  std::cout << "CTRL INIT" << std::endl;
 }
 
 void ControlSystem::print_log(double time) {

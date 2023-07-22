@@ -1,6 +1,11 @@
 # build 
 build/*
 
+# image files 
+*.png 
+*.jpeg 
+*.jpg 
+
 # Prerequisites
 *.d
 
