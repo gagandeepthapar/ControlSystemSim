@@ -1,5 +1,7 @@
 #include "Sensor/sensor.hpp"
 #include "StateEstimator/state_estimator.hpp"
+#include "TrajectoryGenerator/constants.hpp"
+#include "TrajectoryGenerator/trajectory_gen.hpp"
 #include "constants.hpp"
 #include "control_system.hpp"
 #include "plant.hpp"
@@ -59,11 +61,21 @@ int main() {
 
   KalmanFilter kf(F, G, Q, H, R);
 
+  // create reference trajectory
+  lander_data lander_params;
+  trajectory_constraint traj_cons{
+      .pos_0 = (Eigen::Vector3d() << 2400, 450, -330).finished(),
+      // .vel_0 = (Eigen::Vector3d() << 0, 0, 0).finished(),
+      .vel_0 = (Eigen::Vector3d() << -10, -40, -10).finished(),
+      .gamma = M_PI / 6};
+  env_data world{.PLANET_W = EARTH_W, .PLANET_G = EARTH_G};
+  SplineTrajectory traj_gen(lander_params, traj_cons, world);
+
   // form Control System
   Plant *plant_ptr = &msd_plant;
-  // StateEstimator *est_ptr = &no_estimator;
   StateEstimator *est_ptr = &kf;
-  ControlSystem msd(plant_ptr, sensors, est_ptr);
+  TrajectoryGenerator *traj_ptr = &traj_gen;
+  ControlSystem msd(plant_ptr, sensors, est_ptr, traj_ptr);
   Eigen::VectorXd state = (Eigen::Vector2d() << 2.0, 3.0).finished();
 
   // simulate
