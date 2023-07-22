@@ -10,3 +10,6 @@
 [submodule "Controller"]
 	path = Controller
 	url = https://github.com/gagandeepthapar/Controller.git
+[submodule "TrajectoryGenerator"]
+	path = TrajectoryGenerator
+	url = https://github.com/gagandeepthapar/TrajectoryGenerator
