@@ -22,7 +22,7 @@ protected:
                                            Eigen::VectorXd input) = 0;
 
 protected:
-  ODESOLVER::ODESolver *ode;
+  ODESOLVER::ODESolver *m_ode;
 
 public:
   int num_states;
