@@ -8,6 +8,10 @@ An example of an uncontrolled Mass-Spring-Dampener System is plotted below with 
 
 ![MSD](MSD.png)
 
+An example of a landing spacecraft (with no thruster control) is plotted below. It uses ideal sensors and the trajectory was generated via spline interpolation such that the initial position and velocity and final position and velocity conditions are met.
+
+![Fail_landing](lander.gif)
+
 ## Includes
 Requires the `Eigen` C++ library which can be found [here](https://eigen.tuxfamily.org/index.php?title=Main_Page).
 Also uses the `Matplot++` C++ library to plot data directly in C++ which can be found [here](https://github.com/alandefreitas/matplotplusplus/tree/master#line-plots). The required custom libraries are submodueld here. 
