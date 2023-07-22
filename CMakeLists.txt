@@ -15,6 +15,10 @@ find_library(PYTHON_LIB
              PATHS /opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib
              NO_DEFAULT_PATH)
 
+# source epigraph (submodule)
+set(ENABLE_ECOS TRUE)
+# add_subdirectory(TrajectoryGenerator/Epigraph)
+
 # ODE library 
 set(BUILD_ODE_LIB ON CACHE BOOL "Build as a library" FORCE)
 add_subdirectory(ODESolver)
@@ -27,8 +31,14 @@ add_subdirectory(Sensor)
 set(BUILD_EST_LIB ON CACHE BOOL "Build as a library" FORCE)
 add_subdirectory(StateEstimator)
 
-add_executable(example.out example.cpp plant.cpp control_system.cpp)
+# Trajectory library 
+set(BUILD_TRAJ_LIB ON CACHE BOOL "Build as a library" FORCE)
+add_subdirectory(TrajectoryGenerator)
+
+add_executable(example.out landing_simulation.cpp plant.cpp control_system.cpp)
+# target_link_libraries(example.out epigraph)
 target_link_libraries(example.out Matplot++::matplot)
 target_link_libraries(example.out odesolver_lib)
 target_link_libraries(example.out sensor_lib)
 target_link_libraries(example.out stateestimator_lib)
+target_link_libraries(example.out trajectorygenerator_lib)
