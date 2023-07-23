@@ -1,4 +1,5 @@
 #include "control_system.hpp"
+#include "Sensor/sensor.hpp"
 #include "TrajectoryGenerator/traj_constants.hpp"
 #include "TrajectoryGenerator/trajectory_gen.hpp"
 #include "matplot/matplot.h"
@@ -71,6 +72,13 @@ void ControlSystem::simulate(double time, Eigen::VectorXd true_state,
   auto start = std::chrono::high_resolution_clock::now();
 
   // initialize system
+  // check if max time exists in reference
+  if (time > reference->time_of_flight) {
+    std::cout << "INFO: TIME OF FLIGHT SUPERCEDES SIMULATION TIME. SETTING SIM "
+                 "TIME TO "
+              << reference->time_of_flight << " SECONDS" << std::endl;
+    time = reference->time_of_flight;
+  }
   (void)init_sim(time, t_step);
 
   // create intermediary state vectors
@@ -98,11 +106,14 @@ void ControlSystem::simulate(double time, Eigen::VectorXd true_state,
   // iterate through system dynamics
   double t = 0;
   int col_idx = 1;
+  std::cout << m_num_steps << std::endl;
   while ((t <= time) && (t_step > SIM_CONST::SMALL)) {
     // apply control
     actuation = reference->world.PLANET_G;
+    if (col_idx < reference->input().cols()) {
+      actuation = reference->input().col(col_idx) + reference->world.PLANET_G;
+    }
     // actuation = reference->input().col(col_idx);
-    // std::cout << actuation << std::endl;
 
     // update state (use true state for propagation)
     true_state = plant->update(truth_bus.col(col_idx - 1), actuation, t);
@@ -110,7 +121,7 @@ void ControlSystem::simulate(double time, Eigen::VectorXd true_state,
 
     // measure state vector
     for (Sensor *sensor : sensor_set) {
-      int state_id = (int)sensor->sensor_id / 1000 - 1;
+      int state_id = (int)sensor->sensor_id / SENSOR_IDENT - 1;
       meas_state[state_id] = sensor->sample(true_state[state_id]);
     }
     measurement_bus.col(col_idx) = meas_state;
