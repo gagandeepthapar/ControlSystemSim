@@ -137,6 +137,9 @@ int main() {
   const int n = 6; // num states
   const int m = 3; // num inputs
 
+  //
+  // SYSTEM DYNAMICS INFORMATION
+  //
   // set S_Omega matrix (Eqn. 2)
   Eigen::MatrixXd S_Omega = (Eigen::Matrix3d() << 0, -MARS_W[2], MARS_W[1],
                              MARS_W[2], 0, -MARS_W[0], -MARS_W[1], MARS_W[0], 0)
@@ -247,8 +250,6 @@ int main() {
   for (Sensor *comp : sensors) {
     free(comp);
   }
-
-  std::cout << kf.m_P << std::endl;
 
   return 0;
 }
