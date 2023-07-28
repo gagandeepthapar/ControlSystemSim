@@ -106,41 +106,33 @@ void ControlSystem::simulate(double time, Eigen::VectorXd true_state,
   // iterate through system dynamics
   double t = 0;
   int col_idx = 1;
-  std::cout << m_num_steps << std::endl;
   while ((t <= time) && (t_step > SIM_CONST::SMALL)) {
     // apply control
     actuation = reference->world.PLANET_G;
     if (col_idx < reference->input().cols()) {
       actuation = reference->input().col(col_idx) + reference->world.PLANET_G;
     }
-    // actuation = reference->input().col(col_idx);
-
     // update state (use true state for propagation)
     true_state = plant->update(truth_bus.col(col_idx - 1), actuation, t);
     truth_bus.col(col_idx) = true_state;
-
     // measure state vector
     for (Sensor *sensor : sensor_set) {
       int state_id = (int)sensor->sensor_id / SENSOR_IDENT - 1;
       meas_state[state_id] = sensor->sample(true_state[state_id]);
     }
     measurement_bus.col(col_idx) = meas_state;
-
     // estimate state
     est_state = estimator->estimate(meas_state, actuation);
     estimation_bus.col(col_idx) = est_state;
-
     // get reference signal
     ref_state = reference->get_reference(est_state);
     reference_bus.col(col_idx) = ref_state;
-
     // update time
     time_bus[col_idx] = t;
-
     // check time bounds
     t_step = (t + t_step > time) ? (time - t) : (t_step);
     t += t_step;
-    col_idx += 1;
+    col_idx++;
   }
   auto stop = std::chrono::high_resolution_clock::now();
   m_sol_time =

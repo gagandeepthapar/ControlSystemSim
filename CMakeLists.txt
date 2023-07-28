@@ -17,7 +17,6 @@ find_library(PYTHON_LIB
 
 # source epigraph (submodule)
 set(ENABLE_ECOS TRUE)
-# add_subdirectory(TrajectoryGenerator/Epigraph)
 
 # ODE library 
 set(BUILD_ODE_LIB ON CACHE BOOL "Build as a library" FORCE)
@@ -36,7 +35,6 @@ set(BUILD_TRAJ_LIB ON CACHE BOOL "Build as a library" FORCE)
 add_subdirectory(TrajectoryGenerator)
 
 add_executable(example.out landing_simulation.cpp plant.cpp control_system.cpp)
-# target_link_libraries(example.out epigraph)
 target_link_libraries(example.out Matplot++::matplot)
 target_link_libraries(example.out odesolver_lib)
 target_link_libraries(example.out sensor_lib)

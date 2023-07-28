@@ -17,6 +17,7 @@ public:
 
 protected:
   void init_ode_system(ODE_TYPE ode_type, int num_states, double dt);
+
   // applies xdot = f(x, u, t)
   virtual Eigen::VectorXd apply_transition(double time, Eigen::VectorXd state,
                                            Eigen::VectorXd input) = 0;

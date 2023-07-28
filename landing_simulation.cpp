@@ -24,13 +24,6 @@ void plot_3d(const Eigen::MatrixXd &exp, const Eigen::MatrixXd &cmd,
   Eigen::VectorXd vy = (Eigen::VectorXd)exp.row(4);
   Eigen::VectorXd vz = (Eigen::VectorXd)exp.row(5);
 
-  Eigen::VectorXd cmd_x = (Eigen::VectorXd)cmd.row(0);
-  Eigen::VectorXd cmd_y = (Eigen::VectorXd)cmd.row(1);
-  Eigen::VectorXd cmd_z = (Eigen::VectorXd)cmd.row(2);
-  Eigen::VectorXd cmd_vx = (Eigen::VectorXd)cmd.row(3);
-  Eigen::VectorXd cmd_vy = (Eigen::VectorXd)cmd.row(4);
-  Eigen::VectorXd cmd_vz = (Eigen::VectorXd)cmd.row(5);
-
   Eigen::VectorXd ref_x = (Eigen::VectorXd)ref.row(0);
   Eigen::VectorXd ref_y = (Eigen::VectorXd)ref.row(1);
   Eigen::VectorXd ref_z = (Eigen::VectorXd)ref.row(2);
@@ -64,14 +57,13 @@ void plot_3d(const Eigen::MatrixXd &exp, const Eigen::MatrixXd &cmd,
     ax1->hold(true);
     ax1->plot3(z, y, x)->line_width(2);
     ax1->plot3(meas_z, meas_y, meas_x, "g--")->line_width(1);
-    // ax1->plot3(cmd_z, cmd_y, cmd_x)->line_width(2);
-    ax1->plot3(ref_z, ref_y, ref_x)->line_width(2);
+    ax1->plot3(ref_z, ref_y, ref_x)->line_width(1);
     ax1->scatter3({z(i)}, {y(i)}, {x(i)})->marker_face_color({0, 0, 0});
     ax1->hold(false);
 
     // apply legend, title, view angle
-    auto l = plt::legend({"Estimated Path", "Measured State",
-                          "Commanded Reference", "Ideal Trajectory", "Lander"});
+    auto l = plt::legend(
+        {"Estimated Path", "Measured State", "Ideal Trajectory", "Lander"});
     l->location(plt::legend::general_alignment::topleft);
     ax1->view(69, 13);
     ax1->title(name + ": Position");
@@ -81,24 +73,23 @@ void plot_3d(const Eigen::MatrixXd &exp, const Eigen::MatrixXd &cmd,
     ax2->hold(true);
     ax2->plot3(vz, vy, vx)->line_width(2);
     ax2->plot3(meas_vz, meas_vy, meas_vx, "g--")->line_width(1);
-    // ax2->plot3(cmd_vz, cmd_vy, cmd_vx)->line_width(2);
-    ax2->plot3(ref_vz, ref_vy, ref_vx)->line_width(2);
+    ax2->plot3(ref_vz, ref_vy, ref_vx)->line_width(1);
     ax2->scatter3({vz(i)}, {vy(i)}, {vx(i)})->marker_face_color({0, 0, 0});
     ax2->hold(false);
 
     // save frame
-    l = plt::legend({"Estimated Path", "Measured State", "Commanded Reference",
-                     "Ideal Trajectory", "Lander"});
+    l = plt::legend(
+        {"Estimated Path", "Measured State", "Commanded Reference", "Lander"});
     l->location(plt::legend::general_alignment::topleft);
     ax2->view(69, 13);
     ax2->title(name + ": Velocity");
 
-    old_str = std::to_string(i);
-    int min = (count_len > old_str.length()) ? old_str.length() : count_len;
-    frame_ct = std::string(count_len - min, '0') + old_str;
-
     // save frame
     if (animate) {
+      old_str = std::to_string(i);
+      int min = (count_len > old_str.length()) ? old_str.length() : count_len;
+      frame_ct = std::string(count_len - min, '0') + old_str;
+
       ax1->parent()->save("testgif/frame" + frame_ct + ".png");
     }
   }
@@ -106,6 +97,38 @@ void plot_3d(const Eigen::MatrixXd &exp, const Eigen::MatrixXd &cmd,
   if (!animate) {
     plt::show();
   }
+}
+
+void print_log(const Eigen::MatrixXd &state, const Eigen::MatrixXd &input,
+               const Eigen::MatrixXd &mass) {
+
+  Eigen::VectorXd vel = state.bottomRows(3).colwise().norm();
+  double tmin = matplot::inf, tmax = -1 * matplot::inf, curt;
+  // calc min, max thrust
+  for (int i = 0; i < mass.cols(); i++) {
+    // curt = input.col(i).norm() * std::exp(mass(i));
+    curt = input.col(i).norm() * mass(i);
+    tmin = (curt < tmin) ? curt : tmin;
+    tmax = (curt > tmax) ? curt : tmax;
+  }
+
+  // std::cout << "Initial Position: " << state.col(0).topRows(3).transpose()
+  //           << std::endl;
+  std::cout << "Landing Log:" << std::endl;
+  std::cout << "\tFinal Position: "
+            << state.col(state.cols() - 1).topRows(3).transpose() << " m"
+            << std::endl;
+  std::cout << "\tLanding Error: "
+            << state.col(state.cols() - 1).topRows(3).norm() << " m"
+            << std::endl;
+
+  std::cout << "\tFinal Velocity: "
+            << state.col(state.cols() - 1).bottomRows(3).transpose()
+            << std::endl;
+
+  std::cout << "\tMax Velocity: " << vel.maxCoeff() << std::endl;
+  std::cout << "\tMin Thrust: " << tmin << std::endl;
+  std::cout << "\tMax Thrust: " << tmax << std::endl;
 }
 
 int main() {
@@ -133,24 +156,30 @@ int main() {
 
   Eigen::MatrixXd D = Eigen::MatrixXd::Zero(n, 1);
 
-  // init plant
-  LinearSystem lander(A, B, C, D, n, 1, FE);
+  //
+  // PLANT
+  //
+  LinearSystem lander(A, B, C, D, n, m, RKF45);
 
-  // setup sensors
+  //
+  // SENSOR
+  //
   std::vector<Sensor *> sensors;
   for (int i = 0; i < n; i++) {
-    double noise = 1.0;
-    double walk = 1.0;
+    double noise = 10.0;
+    double walk = 5.0;
     if (n >= 3) {
       // velocimeters are less noisy
-      noise = 0.05;
+      noise = 0.1;
       walk = 0.05;
     }
     sensors.push_back(new PinkSensor(10.0, noise, walk));
+    // sensors.push_back(new IdealSensor);
   }
 
-  // init estimator
-  NULLEstimator no_estimator;
+  //
+  // ESTIMATOR
+  //
 
   // KF Matrices
   Eigen::MatrixXd F, G, Q, H, R;
@@ -160,7 +189,7 @@ int main() {
   F = A * DT + F;
 
   G.setIdentity(n, m);
-  G = B * DT + B;
+  G = B * DT;
 
   Q.setIdentity(n, n);
   Q = Q / 1000.0;
@@ -170,31 +199,39 @@ int main() {
   R.setIdentity(n, n);
   R = R / 1000.0;
 
-  KalmanFilter kf(F, G, Q, H, R);
   NULLEstimator no_est;
 
-  // create reference trajectory
+  //
+  // REFERENCE TRAJECTORY
+  //
   lander_data lander_params;
   trajectory_constraint traj_cons{
       .pos_0 = (Eigen::Vector3d() << 2400, 450, -330).finished(),
-      .vel_0 = (Eigen::Vector3d() << 80, -10, 10).finished(),
+      .vel_0 = (Eigen::Vector3d() << 40, 20, -30).finished(),
       .gamma = M_PI / 6};
   env_data world{.PLANET_W = MARS_W, .PLANET_G = MARS_G};
-  SplineTrajectory traj_gen(lander_params, traj_cons, world);
-  // GFOLD traj_gen(lander_params, traj_cons, world);
+  // SplineTrajectory traj_gen(lander_params, traj_cons, world);
+  GFOLD traj_gen(lander_params, traj_cons, world);
 
-  // form Control System
-  Plant *plant_ptr = &lander;
-  StateEstimator *est_ptr = &kf;
-  TrajectoryGenerator *traj_ptr = &traj_gen;
-
+  // initial state
   Eigen::VectorXd state =
       (Eigen::Vector<double, 6>{} << traj_cons.pos_0, traj_cons.vel_0)
           .finished();
+  KalmanFilter kf(F, G, Q, H, R, state);
+
+  //
+  // CONTROL SYSTEM
+  //
+  Plant *plant_ptr = &lander;
+  TrajectoryGenerator *traj_ptr = &traj_gen;
+  StateEstimator *est_ptr = &no_est;
+  // StateEstimator *est_ptr = &kf;
 
   ControlSystem lander_sys(plant_ptr, sensors, est_ptr, traj_ptr);
 
-  // simulate
+  //
+  // SIMULATE
+  //
   double tF = 50.0;
   lander_sys.simulate(tF, state, DT, true, true);
 
@@ -204,11 +241,14 @@ int main() {
   Eigen::MatrixXd &cmd = lander_sys.reference_bus;
   Eigen::MatrixXd &meas = lander_sys.measurement_bus;
   const Eigen::MatrixXd &ref = traj_gen.state();
+  print_log(traj_gen.state(), traj_gen.input(), traj_gen.mass());
   plot_3d(est, cmd, ref, meas, traj_gen.name, ANIMATE);
 
   for (Sensor *comp : sensors) {
     free(comp);
   }
+
+  std::cout << kf.m_P << std::endl;
 
   return 0;
 }
