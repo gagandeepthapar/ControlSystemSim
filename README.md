@@ -1,12 +1,8 @@
-# ControlSystemSim
-Practicing C++ by implementing a plant and closed-loop control system architecture. Used for other projects.
+# StarLander 
+Independent research in optimal control under stochastic conditions, specifically for trajectory-driven vehicles.
 
 ## Context 
-Many real-life controlled systems can be modeled as a closed-loop control system where the plant represents the system (e.g., a mass-spring-dampener) and the supporting blocks measure its state parameters ([Sensor](https://github.com/gagandeepthapar/Sensor)), are estimated to reduce sensor error ([State Estimator](https://github.com/gagandeepthapar/StateEstimator)), are fed into a controller and compared to a reference signal ([Trajectory Generator](https://github.com/gagandeepthapar/TrajectoryGenerator)) where a control signal is outputted and fed into an actuator which applies a force to the plant whose subsequent response can be integrated ([State Integrator](https://github.com/gagandeepthapar/ODESolver)) and the cycle repeats. This architecture supports various plants such as standard linear time-invariant (LTI) systems, time-invariant systems, and non-linear systems.
-
-An example of an uncontrolled Mass-Spring-Dampener System is plotted below with which employs sensors with pink-noise and a Kalman filter for estimation.
-
-![MSD](MSD.png)
+This repository contains work for implementing a closed-loop control system to simulate a spacecraft vehicle landing similar to the SpaceX Falcon 9 or the JPL Mars Lander. It was primarily a project to practice C++ and begin research into optimal control under stochastic conditions.
 
 An example of a landing spacecraft (with no thruster control) is plotted below. It uses ideal sensors and the trajectory was generated via spline interpolation such that the initial position and velocity and final position and velocity conditions are met.
 
